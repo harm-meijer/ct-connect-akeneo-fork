@@ -40,8 +40,14 @@ const attributeParser: Record<
   pim_catalog_boolean: (value: boolean) => Boolean(value),
   pim_catalog_number: (value: string) => Number(value),
   pim_catalog_text: (value: string) => value,
-  pim_catalog_simpleselect: (value: string, ctAttr: any) => ctAttr[value],
-  pim_catalog_multiselect: (value: string) => value.split(","),
+  // When ctAttr is an option-code -> value map, translate; otherwise (ctAttr is
+  // a plain attribute name) keep the raw Akeneo option code.
+  pim_catalog_simpleselect: (value: string, ctAttr: any) =>
+    ctAttr && typeof ctAttr === "object" ? ctAttr[value] ?? value : value,
+  // Akeneo multiselect `data` is already an array of option codes; only split
+  // when it arrives as a comma-separated string.
+  pim_catalog_multiselect: (value: string | string[]) =>
+    Array.isArray(value) ? value : String(value).split(","),
 };
 
 // Helper function to map a single attribute based on locale configuration

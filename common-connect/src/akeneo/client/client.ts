@@ -137,6 +137,10 @@ class AkeneoAPI {
     };
     isDelta?: boolean;
     lastSyncDate?: Date;
+    // When true, use page pagination + with_count to obtain items_count
+    // (Akeneo ignores with_count with search_after pagination). Used only to
+    // compute the total for progress reporting.
+    withCount?: boolean;
   }): Promise<{
     searchAfter: string | null;
     products: AkeneoProduct[];
@@ -146,13 +150,19 @@ class AkeneoAPI {
       const url = `${process.env.AKENEO_BASE_URL}/api/rest/v1/products`;
       const queryParams = new URLSearchParams({
         limit: params?.limit?.toString() ?? "5",
-        ...(params?.searchAfterParam && {
-          search_after: params?.searchAfterParam,
-        }),
-        ...(params?.searchAfterParam && {
-          pagination_type: "search_after",
-        }),
-        with_count: "true",
+        // Counting path: page pagination + with_count (search_after ignores it).
+        // Iteration path: always search_after so the next-link cursor is present
+        // from the very first call (the previous code only set it once a cursor
+        // existed, so Akeneo defaulted to page pagination and the sync stopped
+        // after the first batch).
+        ...(params?.withCount
+          ? { with_count: "true" }
+          : {
+              pagination_type: "search_after",
+              ...(params?.searchAfterParam && {
+                search_after: params?.searchAfterParam,
+              }),
+            }),
         search: JSON.stringify({
           completeness: [
             {

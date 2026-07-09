@@ -87,7 +87,13 @@ export const createExecutionHandler =
       if (storageKey === "delta") {
         await updateJobStatus(JobStateTransitions.toScheduled(failedSyncs));
       } else {
-        await updateJobStatus(JobStateTransitions.toIdle());
+        // Persist failedSyncs (and a completion timestamp) instead of dropping
+        // them, so create/update errors surface instead of vanishing.
+        await updateJobStatus({
+          ...JobStateTransitions.toIdle(),
+          lastSyncDate: new Date(),
+          failedSyncs: failedSyncs ?? null,
+        });
       }
 
       return;

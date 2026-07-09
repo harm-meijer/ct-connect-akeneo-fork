@@ -4,6 +4,7 @@ import { Config } from "../types/config.types";
 export async function getTotalProductsCount(config: Config) {
   const akeneoClient = await getAkeneoClient();
   const { total } = await akeneoClient.getProducts({
+    withCount: true,
     searchFilters: {
       families: Object.entries(config.familyMapping).map(([key]) => key),
       completeness: "100",
